@@ -4,6 +4,12 @@
 #include "Arduino.h"
 #include <ESP8266WiFi.h>
 #include "SimpleList.h"
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+#include <ESP8266mDNS.h>
+#include "WebService.h"
+
+#define DEAUTH_PACKETS 50
 
 extern "C" {
   #include "user_interface.h"
@@ -22,8 +28,9 @@ typedef struct APs {
 class Deauth {
   public:
     Deauth();
-    void startDeauthAll();
+    void startDeauth(AccessPoint ap);
     void startScan();
+    SimpleList<AccessPoint>* getAccessPoints();
   private:
     SimpleList<AccessPoint>* ap_list;
     uint8_t deauthPacket[26] = {
