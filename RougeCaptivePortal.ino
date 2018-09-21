@@ -153,7 +153,17 @@ void setup() {
     serialString = f.readString();
     webString += serialString;
     f.close();
-    webString += "</pre><br><hr><a href=\"/esportal/deauth\"><- Enable deauthentication</a><br><a href=\"/esportal/nodeauth\"><- Disable deauthentication</a></body></html>";
+    webString += "</pre><br><hr><a href=\"/esportal/deauth\"><- Enable deauthentication</a><br><a href=\"/esportal/nodeauth\"><- Disable deauthentication</a>";
+    webString += "<br><hr>List for Access Point deauthentication:<br><table>";
+    webString += "<tr><th>SSID</th><th>BSSID</th><th>Ch</th><th>Signal</th><th>Encrypt.</th><th>Hidden</th></tr>";
+
+    for(size_t i = 0; i < d.getAccessPoints()->size(); i++)
+    {
+      auto ap = d.getAccessPoints()->get(i);
+      webString += "<tr><td>"+ap.ssid+"</td><td>"+ap.s_bssid+"</td><td>"+ap.channel+"</td><td>"+ap.RSSI+"</td><td>"+ap.encryptionType+"</td><td>"+ap.isHidden+"</td></tr>";
+    }
+    webString += "</table></body></html>";
+
     web.webServer.send(200, "text/html", webString);
     Serial.println(serialString);
     serialString = "";
@@ -174,6 +184,8 @@ void setup() {
     web.webServer.send(200, "text/html", webString);
     webString = "";
   });
+
+  
 
   //Start Webserver
   Serial.print("Starting Web Server...");
